@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.distributions as ptd
+import numpy as np
 
 from network_utils import np2torch, device
 
@@ -43,7 +44,13 @@ class BasePolicy:
         observations = np2torch(observations)
         #######################################################
         #########   YOUR CODE HERE - 1-4 lines.    ############
-
+        
+        # 1. get the distribution over actions
+        distributions = self.action_distribution(observations)
+        # 2. samle action and compute the log probability
+        sampled_actions = distributions.sample()
+        log_probs = distributions.log_prob(sampled_actions).detach().cpu().numpy()
+        sampled_actions = sampled_actions.detach().cpu().numpy()
         #######################################################
         #########          END YOUR CODE.          ############
         if return_log_prob:
@@ -68,6 +75,9 @@ class CategoricalPolicy(BasePolicy, nn.Module):
         """
         #######################################################
         #########   YOUR CODE HERE - 1-2 lines.    ############
+        
+        distribution = ptd.Categorical(logits =  self.network(observations))
+        
 
         #######################################################
         #########          END YOUR CODE.          ############

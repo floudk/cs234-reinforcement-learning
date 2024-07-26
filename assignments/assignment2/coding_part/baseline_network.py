@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import gym
 from network_utils import build_mlp, device, np2torch
 
 
@@ -26,6 +27,10 @@ class BaselineNetwork(nn.Module):
 
         #######################################################
         #########   YOUR CODE HERE - 2-8 lines.   #############
+        action_dim = env.action_space.n if isinstance(env.action_space, gym.spaces.Discrete) else self.env.action_space.shape[0]
+        self.network = build_mlp(observation_dim,action_dim,config.n_layers,config.layer_size)
+        self.optimizer = torch.optim.Adam(self.network.parameters(), lr = self.lr)
+
 
         #######################################################
         #########          END YOUR CODE.          ############

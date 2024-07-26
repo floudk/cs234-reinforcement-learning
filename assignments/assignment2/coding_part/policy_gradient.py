@@ -7,7 +7,6 @@ from baseline_network import BaselineNetwork
 from network_utils import build_mlp, device, np2torch
 from policy import CategoricalPolicy, GaussianPolicy
 
-
 class PolicyGradient(object):
     """
     Class for implementing a policy gradient algorithm
@@ -72,6 +71,17 @@ class PolicyGradient(object):
         """
         #######################################################
         #########   YOUR CODE HERE - 8-12 lines.   ############
+        
+        # 1. create a network using build_mlp
+        network = build_mlp(self.observation_dim, self.action_dim, self.config.n_layers, self.config.layer_size)
+        network.to(device)
+        if self.discrete:
+            self.policy = CategoricalPolicy(network)
+        else:
+            self.policy = GaussianPolicy(network, self.action_dim)
+        
+        self.optimizer = torch.optim.Adam(network.parameters(), lr = self.lr)
+
 
         #######################################################
         #########          END YOUR CODE.          ############
@@ -190,7 +200,10 @@ class PolicyGradient(object):
             rewards = path["reward"]
             #######################################################
             #########   YOUR CODE HERE - 5-10 lines.   ############
-
+            returns = np.zeros(len(rewards))
+            returns[-1] = rewards[-1]
+            for t in reversed(range(len(rewards) -1)):
+                returns[t] = rewards[t] + self.config.gamma * returns[t+1]
             #######################################################
             #########          END YOUR CODE.          ############
             all_returns.append(returns)
@@ -215,7 +228,7 @@ class PolicyGradient(object):
         """
         #######################################################
         #########   YOUR CODE HERE - 1-2 lines.    ############
-
+        normalized_advantages = (advantages - np.mean(advantages)) / np.std(advantages)
         #######################################################
         #########          END YOUR CODE.          ############
         return normalized_advantages
@@ -291,6 +304,7 @@ class PolicyGradient(object):
 
             # collect a minibatch of samples
             paths, total_rewards = self.sample_path(self.env)
+            print("Sampled batch",t, "with", len(paths), "trajectories...")
             all_total_rewards.extend(total_rewards)
             observations = np.concatenate([path["observation"] for path in paths])
             actions = np.concatenate([path["action"] for path in paths])
