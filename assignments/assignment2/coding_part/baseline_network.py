@@ -27,10 +27,10 @@ class BaselineNetwork(nn.Module):
 
         #######################################################
         #########   YOUR CODE HERE - 2-8 lines.   #############
-        action_dim = env.action_space.n if isinstance(env.action_space, gym.spaces.Discrete) else self.env.action_space.shape[0]
-        self.network = build_mlp(observation_dim,action_dim,config.n_layers,config.layer_size)
+        self.network = build_mlp(observation_dim,1,config.n_layers,config.layer_size)
         self.optimizer = torch.optim.Adam(self.network.parameters(), lr = self.lr)
-
+        self.criterion = nn.MSELoss()
+        self.network.to(device)
 
         #######################################################
         #########          END YOUR CODE.          ############
@@ -55,7 +55,7 @@ class BaselineNetwork(nn.Module):
         """
         #######################################################
         #########   YOUR CODE HERE - 1 lines.     #############
-
+        output = self.network(observations).squeeze()
         #######################################################
         #########          END YOUR CODE.          ############
         assert output.ndim == 1
@@ -83,7 +83,8 @@ class BaselineNetwork(nn.Module):
         observations = np2torch(observations)
         #######################################################
         #########   YOUR CODE HERE - 1-4 lines.   ############
-
+        V = self(observations).detach().cpu().numpy()
+        advantages = returns - V
         #######################################################
         #########          END YOUR CODE.          ############
         return advantages
@@ -105,6 +106,12 @@ class BaselineNetwork(nn.Module):
         observations = np2torch(observations)
         #######################################################
         #########   YOUR CODE HERE - 4-10 lines.  #############
+        V = self(observations)
+        loss = self.criterion(V,returns)
 
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+        
         #######################################################
         #########          END YOUR CODE.          ############

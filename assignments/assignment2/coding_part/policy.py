@@ -49,7 +49,7 @@ class BasePolicy:
         distributions = self.action_distribution(observations)
         # 2. samle action and compute the log probability
         sampled_actions = distributions.sample()
-        log_probs = distributions.log_prob(sampled_actions).detach().cpu().numpy()
+        log_probs = distributions.log_prob(sampled_actions)
         sampled_actions = sampled_actions.detach().cpu().numpy()
         #######################################################
         #########          END YOUR CODE.          ############
