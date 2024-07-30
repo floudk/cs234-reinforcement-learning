@@ -47,6 +47,7 @@ class BasePolicy:
         
         # 1. get the distribution over actions
         distributions = self.action_distribution(observations)
+
         # 2. samle action and compute the log probability
         sampled_actions = distributions.sample()
         log_probs = distributions.log_prob(sampled_actions)
@@ -97,6 +98,8 @@ class GaussianPolicy(BasePolicy, nn.Module):
         #######################################################
         #########   YOUR CODE HERE - 1 line.       ############
 
+        self.log_std = nn.Parameter(torch.zeros(action_dim)).to(device)
+
         #######################################################
         #########          END YOUR CODE.          ############
 
@@ -110,7 +113,7 @@ class GaussianPolicy(BasePolicy, nn.Module):
         """
         #######################################################
         #########   YOUR CODE HERE - 1 line.       ############
-
+        std = torch.exp(self.log_std)
         #######################################################
         #########          END YOUR CODE.          ############
         return std
@@ -134,6 +137,10 @@ class GaussianPolicy(BasePolicy, nn.Module):
         """
         #######################################################
         #########   YOUR CODE HERE - 2-4 lines.    ############
+        mean = self.network(observations)
+        std = self.std()
+        normals = ptd.Normal(mean,std)
+        distribution = ptd.Independent(normals,1)
 
         #######################################################
         #########          END YOUR CODE.          ############
