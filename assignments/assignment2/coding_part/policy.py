@@ -113,7 +113,7 @@ class GaussianPolicy(BasePolicy, nn.Module):
         """
         #######################################################
         #########   YOUR CODE HERE - 1 line.       ############
-        std = torch.exp(self.log_std)
+        std = self.log_std.data.exp()
         #######################################################
         #########          END YOUR CODE.          ############
         return std

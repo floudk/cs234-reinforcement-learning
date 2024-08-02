@@ -80,7 +80,7 @@ class PolicyGradient(object):
         else:
             self.policy = GaussianPolicy(network, self.action_dim)
         
-        self.optimizer = torch.optim.Adam(network.parameters(), lr = self.lr)
+        self.optimizer = torch.optim.Adam(self.policy.parameters(), lr = self.lr)
 
 
         #######################################################
@@ -248,6 +248,7 @@ class PolicyGradient(object):
                 returns, observations
             )
         else:
+            # print("returns", returns)
             advantages = returns
 
         if self.config.normalize_advantage:
@@ -276,14 +277,18 @@ class PolicyGradient(object):
         PyTorch optimizers will try to minimize the loss you compute, but you
         want to maximize the policy's performance.
         """
-        # observations = np2torch(observations)
+        observations = np2torch(observations)
         actions = np2torch(actions)
         advantages = np2torch(advantages)
         #######################################################
         #########   YOUR CODE HERE - 5-7 lines.    ############
-        policy_dist, log_probs  = self.policy.act(observations, return_log_prob=True)
-        loss = - (log_probs * advantages).mean()
 
+        # TODO: find the reason why the following code does not work
+        
+        act_distribution = self.policy.action_distribution(observations)
+        log_probs = act_distribution.log_prob(actions)
+
+        loss = - (log_probs * advantages).mean()
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -319,7 +324,7 @@ class PolicyGradient(object):
 
             # advantage will depend on the baseline implementation
             advantages = self.calculate_advantage(returns, observations)
-
+    
             # run training operations
             if self.config.use_baseline:
                 self.baseline_network.update_baseline(returns, observations)

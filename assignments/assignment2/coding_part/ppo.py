@@ -47,6 +47,18 @@ class PPO(PolicyGradient):
 
         #######################################################
         #########   YOUR CODE HERE - 10-15 lines.   ###########
+        actions_dist = self.policy.action_distribution(observations)
+        new_logprobs = actions_dist.log_prob(actions)
+        new_logprobs = new_logprobs.squeeze()
+        
+        ratio = torch.exp(new_logprobs - old_logprobs)
+        clipped_ratio = torch.clamp(ratio, 1-self.eps_clip, 1+self.eps_clip)
+
+        loss = -torch.min(ratio * advantages, clipped_ratio * advantages).mean()
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
         #######################################################
         #########          END YOUR CODE.          ############
@@ -70,6 +82,7 @@ class PPO(PolicyGradient):
 
             # collect a minibatch of samples
             paths, total_rewards = self.sample_path(self.env)
+            print("Sampled batch",t, "with", len(paths), "trajectories...")
             all_total_rewards.extend(total_rewards)
             observations = np.concatenate([path["observation"] for path in paths])
             actions = np.concatenate([path["action"] for path in paths])
@@ -150,6 +163,7 @@ class PPO(PolicyGradient):
                 # Note the difference between this line and the corresponding line
                 # in PolicyGradient.
                 action, old_logprob = self.policy.act(states[-1][None], return_log_prob = True)
+                old_logprob = old_logprob.detach().cpu().numpy()
                 assert old_logprob.shape == (1,)
                 action, old_logprob = action[0], old_logprob[0]
                 state, reward, done, info = env.step(action)
